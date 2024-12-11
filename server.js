@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Route to send OTP (modified for resend functionality)
+// Route to send OTP (no change in this part)
 app.post("/api/send-otp", async (req, res) => {
   const { email } = req.body;
 
@@ -29,35 +29,11 @@ app.post("/api/send-otp", async (req, res) => {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  // Check if an OTP already exists and is still valid
-  if (otpStorage[email]) {
-    const { timestamp } = otpStorage[email];
-    const otpExpirationTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-    // If OTP is still valid, don't generate a new one, just resend it
-    if (Date.now() - timestamp < otpExpirationTime) {
-      try {
-        await transporter.sendMail({
-          from: "kayskidadenusi@gmail.com",
-          to: email,
-          subject: "Your OTP Code",
-          text: `Your OTP code is: ${otpStorage[email].otp}`,
-        });
-
-        return res.status(200).json({ message: "OTP resent successfully" });
-      } catch (error) {
-        console.error("Error in sending OTP:", error);
-        return res.status(500).json({ message: "Error resending OTP" });
-      }
-    }
-  }
-
-  // If OTP doesn't exist or has expired, generate a new OTP
-  const otp = Math.floor(100000 + Math.random() * 900000); // Generate a new 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit OTP
   otpStorage[email] = { otp, timestamp: Date.now() }; // Store OTP and timestamp for expiration
 
   try {
-    // Send new OTP email
+    // Send OTP email
     await transporter.sendMail({
       from: "kayskidadenusi@gmail.com",
       to: email,
@@ -72,7 +48,7 @@ app.post("/api/send-otp", async (req, res) => {
   }
 });
 
-// Route to verify OTP (no change in this part)
+// Route to verify OTP (only OTP is required now, no email in the request body)
 app.post("/api/verify-otp", (req, res) => {
   const { otp } = req.body;
 
